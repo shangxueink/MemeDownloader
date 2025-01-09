@@ -5,8 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meme Downloader</title>
-
-
     <style>
         body {
             background-color: rgb(230, 223, 220);
@@ -669,6 +667,8 @@
         }
     </style>
     <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 
 <body>
@@ -682,12 +682,21 @@
             <ol>
                 <li><strong>勾选需要下载的表情包</strong> ✅，然后点击下方的【下载】按钮。</li>
                 <li><strong>双击图片</strong>：切换预览图 🔄</li>
+                <li><strong>单击图片</strong>：查看大图 🔍</li>
+                <li>
+                    <strong>退出大图模式</strong>：
+                    <ul>
+                        <li>按 <code>ESC</code> 键。</li>
+                        <li>或点击右上角的叉号（×）。</li>
+                        <li>或再次单击任意处。</li>
+                    </ul>
+                </li>
             </ol>
             <hr>
             <h3>注意 ⚠️</h3>
             <ul>
                 <li>如果浏览器提示（通常在左上角）<strong>"此文件想要下载多个文件"</strong>，请点击<strong>允许</strong>。</li>
-                <li>下载的表情文件将保存到当前 <strong>浏览器的默认下载文件夹</strong> 📁，图片文件名将以<code>表情包名称</code>作为前缀，方便区分。</li>
+                <li>下载的表情文件将保存到当前 <strong>浏览器的默认下载文件夹</strong> 📁，图片文件将存放到 <code>表情包名称.zip</code> 的文件中。</li>
             </ul>
             <hr>
             <p>如果你希望下载自己整理的TXT图片</p>
@@ -700,8 +709,8 @@
         </div>
         <div id="book-list">
             <div v-for="book in books" :key="book.name" class="book-item" @click="toggleSelect(book)">
-                <img :src="book.cover" :alt="book.name" @click.stop="handleImageClick(book)"
-                    @dblclick.stop="changeCover(book)">
+                <img :src="book.cover" :alt="book.name" referrerpolicy="no-referrer"
+                    @click.stop="handleImageClick(book)" @dblclick.stop="changeCover(book)">
                 <label>{{ book.name.replace('.txt', '') }}</label>
                 <input type="checkbox" :value="book.name" v-model="selectedBooks">
                 <div class="checkbox-custom"></div>
@@ -711,6 +720,7 @@
                 <span>+</span>
             </div>
         </div>
+
 
         <div class="progress-container" id="progressContainer">
             <div v-for="task in activeTasks" :key="task.book" class="progress-item">
@@ -728,7 +738,7 @@
 
         <div id="imageModal" v-if="showModal" @click="closeModal">
             <button id="closeImageModal" @click.stop="closeModal">×</button>
-            <img id="modalImage" :src="modalImageSrc" alt="Large preview">
+            <img id="modalImage" :src="modalImageSrc" alt="Large preview" referrerpolicy="no-referrer">
         </div>
 
         <div class="modal" v-if="showAddEmojiModalFlag">
@@ -778,20 +788,12 @@
                     }
                 };
 
-                const handleImageClick = async (book) => {
+                const handleImageClick = (book) => {
                     if (!book.clickTimer) {
-                        book.clickTimer = setTimeout(async () => {
-                            try {
-                                const base64Url = await fetchImageAsBase64(book.cover);
-                                if (base64Url) {
-                                    modalImageSrc.value = base64Url;
-                                    showModal.value = true;
-                                }
-                            } catch (error) {
-                                console.error('Error fetching image as Base64:', error);
-                            }
+                        book.clickTimer = setTimeout(() => {
+                            showLargeImage(book);
                             book.clickTimer = null; // 清除计时器
-                        }, 300); // 延迟 300 毫秒触发单击
+                        }, 300); // 延迟一秒触发单击
                     } else {
                         clearTimeout(book.clickTimer); // 清除单击计时器
                         book.clickTimer = null;
@@ -799,53 +801,31 @@
                     }
                 };
 
-
                 const showLargeImage = (book) => {
                     modalImageSrc.value = book.cover;
                     showModal.value = true;
                 };
 
-                const fetchImageAsBase64 = async (url) => {
-                    try {
-                        const response = await fetch(url, {
-                            headers: {
-                                'Referer': 'https://www.bilibili.com/',
-                                'User-Agent': 'Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / 537.36 (KHTML, like Gecko) Chrome / 92.0.4515.131 Safari / 537.36'
-                            },
-                            referrerPolicy: 'no-referrer'
-                        });
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        const blob = await response.blob();
-                        return new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        });
-                    } catch (error) {
-                        console.error(`Error fetching image: ${url}`, error);
-                        return null;
-                    }
-                };
+                const changeCover = (book) => {
+                    if (book.isChangingCover) return; // 如果正在切换，直接返回
+                    book.isChangingCover = true; // 标记为正在切换
 
-
-                const changeCover = async (book) => {
                     const lines = book.content.split('\n').filter(line => line.trim() !== '');
                     const randomIndex = Math.floor(Math.random() * lines.length);
                     const newCover = processUrl(lines[randomIndex]);
 
-                    try {
-                        const base64Url = await fetchImageAsBase64(newCover);
-                        if (base64Url) {
-                            book.cover = base64Url;
-                        }
-                    } catch (error) {
-                        console.error('Error fetching image as Base64:', error);
-                        book.cover = 'https://placeholder.com/error-image.png'; // 加载备用图片
-                    }
+                    // 预加载图片
+                    const img = new Image();
+                    img.src = newCover;
+                    img.onload = () => {
+                        book.cover = newCover; // 图片加载成功后再更新封面
+                        book.isChangingCover = false; // 重置标记
+                    };
+                    img.onerror = () => {
+                        console.error('Failed to load image:', newCover);
+                        book.isChangingCover = false; // 重置标记
+                    };
                 };
-
 
 
                 const closeModal = () => {
@@ -857,23 +837,10 @@
                         closeModal();
                     }
                 };
-                onMounted(async () => {
+
+                onMounted(() => {
                     window.addEventListener('keydown', handleEscapeKey);
-
-                    // 将所有封面图转换为 Base64
-                    for (const book of books.value) {
-                        try {
-                            const base64Url = await fetchImageAsBase64(book.cover);
-                            if (base64Url) {
-                                book.cover = base64Url;
-                            }
-                        } catch (error) {
-                            console.error('Error fetching initial cover as Base64:', error);
-                        }
-                    }
-                    loading.value = false;
                 });
-
 
                 onUnmounted(() => {
                     window.removeEventListener('keydown', handleEscapeKey);
@@ -907,28 +874,20 @@
                     return name;
                 };
 
-                const addEmoji = async () => {
+                const addEmoji = () => {
                     if (newEmojiContent.value) {
                         const existingNames = books.value.map(book => book.name);
                         const newEmojiName = generateUniqueName(existingNames) + '.txt';
-                        const defaultCoverUrl = 'https://i0.hdslb.com/bfs/article/80d629bf90808e63331132e644bfb441927f896d.png';
-
-                        try {
-                            const base64Url = await fetchImageAsBase64(defaultCoverUrl);
-                            const newEmoji = {
-                                name: newEmojiName,
-                                cover: base64Url || defaultCoverUrl, // 使用 Base64 或备用 URL
-                                content: newEmojiContent.value
-                            };
-                            books.value.push(newEmoji);
-                            newEmojiContent.value = ''; // 清空内容
-                            closeAddEmojiModal();
-                        } catch (error) {
-                            console.error('Error fetching default cover as Base64:', error);
-                        }
+                        const newEmoji = {
+                            name: newEmojiName,
+                            cover: 'https://i0.hdslb.com/bfs/article/80d629bf90808e63331132e644bfb441927f896d.png',
+                            content: newEmojiContent.value
+                        };
+                        books.value.push(newEmoji);
+                        newEmojiContent.value = ''; // 清空内容
+                        closeAddEmojiModal();
                     }
                 };
-
 
                 const startDownload = () => {
                     if (selectedBooks.value.length === 0) {
@@ -964,32 +923,6 @@
 
                     // 立即开始下载
                     startImageDownloads(task);
-                };
-
-                const startImageDownloads = async (task) => {
-                    const bookName = task.book;
-                    while (task.currentLine < task.lines.length && task.isDownloading) {
-                        if (task.isPaused) {
-                            await new Promise(resolve => setTimeout(resolve, 100)); // 暂停时等待
-                            continue;
-                        }
-                        const line = task.lines[task.currentLine].trim();
-                        if (line) {
-                            const url = processUrl(line);
-                            const imageName = `${bookName.replace('.txt', '')}_${extractFilenameFromUrl(url)}`;
-                            try {
-                                await downloadImage(url, imageName);
-                                task.completed++;
-                            } catch (error) {
-                                console.error(`Error downloading ${url}: ${error.message}`);
-                            }
-                        }
-                        task.currentLine++;
-                    }
-                    if (task.currentLine >= task.lines.length) {
-                        task.isDownloading = false;
-                        downloadTasks.value.delete(bookName);
-                    }
                 };
 
                 const pauseDownload = () => {
@@ -1031,7 +964,41 @@
                     return parts[parts.length - 1];
                 };
 
-                const downloadImage = async (url, imageName) => {
+                const startImageDownloads = async (task) => {
+                    const bookName = task.book;
+                    const zip = new JSZip(); // 创建一个 JSZip 实例
+
+                    while (task.currentLine < task.lines.length && task.isDownloading) {
+                        if (task.isPaused) {
+                            await new Promise(resolve => setTimeout(resolve, 100)); // 暂停时等待
+                            continue;
+                        }
+                        const line = task.lines[task.currentLine].trim();
+                        if (line) {
+                            const url = processUrl(line);
+                            const imageName = `${bookName.replace('.txt', '')}_${extractFilenameFromUrl(url)}`;
+                            try {
+                                const blob = await downloadImage(url); // 修改这里，不再直接下载
+                                zip.file(imageName, blob); // 将图片添加到 ZIP 文件中
+                                task.completed++;
+                            } catch (error) {
+                                console.error(`Error downloading ${url}: ${error.message}`);
+                            }
+                        }
+                        task.currentLine++;
+                    }
+                    if (task.currentLine >= task.lines.length) {
+                        task.isDownloading = false;
+                        downloadTasks.value.delete(bookName);
+
+                        // 下载 ZIP 文件
+                        zip.generateAsync({ type: "blob" }).then(function (content) {
+                            saveAs(content, `${bookName.replace('.txt', '')}.zip`);
+                        });
+                    }
+                };
+
+                const downloadImage = async (url) => {
                     try {
                         const response = await fetch(url, {
                             headers: {
@@ -1044,20 +1011,12 @@
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         const blob = await response.blob();
-                        const downloadUrl = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = downloadUrl;
-                        a.download = imageName;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(downloadUrl);
+                        return blob; // 返回 Blob 对象
                     } catch (error) {
                         console.error(`Error downloading image: ${url}`, error);
                         throw error;
                     }
                 };
-
 
                 const mockBooks = [
                     {
@@ -30117,7 +30076,6 @@ article/bfc4e8b11bedf9cb90b32b8bcea2e9ed770f8c17.jpg
                                 .trim()
                     },
                 ];
-
 
 
                 books.value = mockBooks;
