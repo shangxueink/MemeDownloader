@@ -108,9 +108,10 @@
 
         .book-item input[type="checkbox"]:checked+.checkbox-custom {
             background-color: #6200ea;
+            border-color: #6200ea;
         }
 
-        .book-item input[type="checkbox"]:checked+.checkbox-custom:after {
+        .book-item input[type="checkbox"]:checked+.checkbox-custom::after {
             content: '✓';
             color: white;
             position: absolute;
@@ -121,7 +122,7 @@
         }
 
         .book-item.selected {
-            border: 2px solid #6200ea;
+            box-shadow: 0 4px 8px rgba(84, 59, 199, 0.91), 0 0 0 2px rgba(98, 0, 234, 0.5);
         }
 
         /* 加号表情包框样式 */
@@ -691,7 +692,8 @@
             <div style="font-size: 24px; color: #6200ea;">加载中...</div>
         </div>
         <div id="book-list">
-            <div v-for="book in books" :key="book.name" class="book-item" @click="toggleSelect(book)">
+            <div v-for="book in books" :key="book.name" class="book-item"
+                :class="{ 'selected': selectedBooks.includes(book.name) }" @click="toggleSelect(book)">
                 <img :src="book.cover" :alt="book.name" referrerpolicy="no-referrer"
                     @click.stop="handleImageClick(book)" @dblclick.stop="changeCover(book)">
                 <label>{{ book.name.replace('.txt', '') }}</label>
@@ -872,109 +874,109 @@
                     }
                 };
 
-                
 
-        const startDownload = () => {
-            if (selectedBooks.value.length === 0) {
-                alert('请至少选择一个表情包进行下载。');
-                return;
-            }
-            selectedBooks.value.forEach(bookName => {
-                startBookDownload(bookName);
-            });
 
-            // 自动触发一次暂停和继续
-            pauseDownload();
-            setTimeout(() => {
-                resumeDownload();
-            }, 100);
-        };
-
-        const startBookDownload = (bookName) => {
-            const book = books.value.find(b => b.name === bookName);
-            if (!book) {
-                console.error(`Book ${bookName} not found.`);
-                return;
-            }
-
-            const content = book.content;
-            const lines = content.split('\n').filter(line => line.trim() !== '');
-            const total = lines.length;
-
-            const task = {
-                book: bookName,
-                completed: 0,
-                total: total,
-                isDownloading: true,
-                isPaused: false,
-                currentLine: 0,
-                lines: lines,
-                zip: new JSZip()
-            };
-            downloadTasks.value.set(bookName, task);
-        };
-
-        const pauseDownload = () => {
-            downloadTasks.value.forEach(task => {
-                if (task.isDownloading) {
-                    task.isPaused = true;
-                }
-            });
-            isPaused.value = true;
-        };
-
-        const resumeDownload = () => {
-            isPaused.value = false;
-            downloadTasks.value.forEach(task => {
-                if (task.isPaused) {
-                    task.isPaused = false;
-                    processDownload(task);
-                }
-            });
-        };
-
-        const processDownload = async (task) => {
-            while (task.currentLine < task.lines.length && task.isDownloading && !task.isPaused) {
-                const line = task.lines[task.currentLine].trim();
-                if (line) {
-                    const url = processUrl(line);
-                    const imageName = `${task.book.replace('.txt', '')}_${extractFilenameFromUrl(url)}`;
-                    try {
-                        const blob = await downloadImage(url);
-                        task.zip.file(imageName, blob);
-                        task.completed++;
-                    } catch (error) {
-                        console.error(`Error downloading ${url}: ${error.message}`);
+                const startDownload = () => {
+                    if (selectedBooks.value.length === 0) {
+                        alert('请至少选择一个表情包进行下载。');
+                        return;
                     }
-                }
-                task.currentLine++;
-            }
+                    selectedBooks.value.forEach(bookName => {
+                        startBookDownload(bookName);
+                    });
 
-            if (task.currentLine >= task.lines.length) {
-                task.isDownloading = false;
-                // 生成并下载这个表情包的 ZIP 文件
-                task.zip.generateAsync({ type: "blob" }).then(function (content) {
-                    saveAs(content, `${task.book.replace('.txt', '')}.zip`);
-                });
-                downloadTasks.value.delete(task.book);
-            } else if (!task.isPaused) {
-                // 如果还有内容且未暂停，继续处理
-                setTimeout(() => processDownload(task), 100);
-            }
-        };
+                    // 自动触发一次暂停和继续
+                    pauseDownload();
+                    setTimeout(() => {
+                        resumeDownload();
+                    }, 100);
+                };
 
-        const stopDownload = () => {
-            downloadTasks.value.forEach(task => {
-                task.isDownloading = false;
-                task.isPaused = false;
-            });
-            downloadTasks.value.clear();
-            isPaused.value = false;
-        };
+                const startBookDownload = (bookName) => {
+                    const book = books.value.find(b => b.name === bookName);
+                    if (!book) {
+                        console.error(`Book ${bookName} not found.`);
+                        return;
+                    }
+
+                    const content = book.content;
+                    const lines = content.split('\n').filter(line => line.trim() !== '');
+                    const total = lines.length;
+
+                    const task = {
+                        book: bookName,
+                        completed: 0,
+                        total: total,
+                        isDownloading: true,
+                        isPaused: false,
+                        currentLine: 0,
+                        lines: lines,
+                        zip: new JSZip()
+                    };
+                    downloadTasks.value.set(bookName, task);
+                };
+
+                const pauseDownload = () => {
+                    downloadTasks.value.forEach(task => {
+                        if (task.isDownloading) {
+                            task.isPaused = true;
+                        }
+                    });
+                    isPaused.value = true;
+                };
+
+                const resumeDownload = () => {
+                    isPaused.value = false;
+                    downloadTasks.value.forEach(task => {
+                        if (task.isPaused) {
+                            task.isPaused = false;
+                            processDownload(task);
+                        }
+                    });
+                };
+
+                const processDownload = async (task) => {
+                    while (task.currentLine < task.lines.length && task.isDownloading && !task.isPaused) {
+                        const line = task.lines[task.currentLine].trim();
+                        if (line) {
+                            const url = processUrl(line);
+                            const imageName = `${task.book.replace('.txt', '')}_${extractFilenameFromUrl(url)}`;
+                            try {
+                                const blob = await downloadImage(url);
+                                task.zip.file(imageName, blob);
+                                task.completed++;
+                            } catch (error) {
+                                console.error(`Error downloading ${url}: ${error.message}`);
+                            }
+                        }
+                        task.currentLine++;
+                    }
+
+                    if (task.currentLine >= task.lines.length) {
+                        task.isDownloading = false;
+                        // 生成并下载这个表情包的 ZIP 文件
+                        task.zip.generateAsync({ type: "blob" }).then(function (content) {
+                            saveAs(content, `${task.book.replace('.txt', '')}.zip`);
+                        });
+                        downloadTasks.value.delete(task.book);
+                    } else if (!task.isPaused) {
+                        // 如果还有内容且未暂停，继续处理
+                        setTimeout(() => processDownload(task), 100);
+                    }
+                };
+
+                const stopDownload = () => {
+                    downloadTasks.value.forEach(task => {
+                        task.isDownloading = false;
+                        task.isPaused = false;
+                    });
+                    downloadTasks.value.clear();
+                    isPaused.value = false;
+                };
 
 
 
-        
+
                 const processUrl = (url) => {
                     return url.startsWith('http') ? url : 'https://i0.hdslb.com/bfs/' + url;
                 };
@@ -30102,7 +30104,6 @@ article/bfc4e8b11bedf9cb90b32b8bcea2e9ed770f8c17.jpg
                 .trim()
     },
 ];
-
 
 
 
