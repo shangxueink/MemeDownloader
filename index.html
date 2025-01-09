@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meme Downloader</title>
+
+
     <style>
         body {
             background-color: rgb(230, 223, 220);
@@ -680,15 +682,6 @@
             <ol>
                 <li><strong>勾选需要下载的表情包</strong> ✅，然后点击下方的【下载】按钮。</li>
                 <li><strong>双击图片</strong>：切换预览图 🔄</li>
-                <li><strong>单击图片</strong>：查看大图 🔍</li>
-                <li>
-                    <strong>退出大图模式</strong>：
-                    <ul>
-                        <li>按 <code>ESC</code> 键。</li>
-                        <li>或点击右上角的叉号（×）。</li>
-                        <li>或再次单击任意处。</li>
-                    </ul>
-                </li>
             </ol>
             <hr>
             <h3>注意 ⚠️</h3>
@@ -785,12 +778,20 @@
                     }
                 };
 
-                const handleImageClick = (book) => {
+                const handleImageClick = async (book) => {
                     if (!book.clickTimer) {
-                        book.clickTimer = setTimeout(() => {
-                            showLargeImage(book);
+                        book.clickTimer = setTimeout(async () => {
+                            try {
+                                const base64Url = await fetchImageAsBase64(book.cover);
+                                if (base64Url) {
+                                    modalImageSrc.value = base64Url;
+                                    showModal.value = true;
+                                }
+                            } catch (error) {
+                                console.error('Error fetching image as Base64:', error);
+                            }
                             book.clickTimer = null; // 清除计时器
-                        }, 300); // 延迟一秒触发单击
+                        }, 300); // 延迟 300 毫秒触发单击
                     } else {
                         clearTimeout(book.clickTimer); // 清除单击计时器
                         book.clickTimer = null;
@@ -798,17 +799,54 @@
                     }
                 };
 
+
                 const showLargeImage = (book) => {
                     modalImageSrc.value = book.cover;
                     showModal.value = true;
                 };
 
-                const changeCover = (book) => {
+                const fetchImageAsBase64 = async (url) => {
+                    try {
+                        const response = await fetch(url, {
+                            headers: {
+                                'Referer': 'https://www.bilibili.com/',
+                                'User-Agent': 'Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / 537.36 (KHTML, like Gecko) Chrome / 92.0.4515.131 Safari / 537.36'
+                            },
+                            referrerPolicy: 'no-referrer'
+                        });
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const blob = await response.blob();
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch (error) {
+                        console.error(`Error fetching image: ${url}`, error);
+                        return null;
+                    }
+                };
+
+
+                const changeCover = async (book) => {
                     const lines = book.content.split('\n').filter(line => line.trim() !== '');
                     const randomIndex = Math.floor(Math.random() * lines.length);
                     const newCover = processUrl(lines[randomIndex]);
-                    book.cover = newCover;
+
+                    try {
+                        const base64Url = await fetchImageAsBase64(newCover);
+                        if (base64Url) {
+                            book.cover = base64Url;
+                        }
+                    } catch (error) {
+                        console.error('Error fetching image as Base64:', error);
+                        book.cover = 'https://placeholder.com/error-image.png'; // 加载备用图片
+                    }
                 };
+
+
 
                 const closeModal = () => {
                     showModal.value = false;
@@ -819,10 +857,23 @@
                         closeModal();
                     }
                 };
-
-                onMounted(() => {
+                onMounted(async () => {
                     window.addEventListener('keydown', handleEscapeKey);
+
+                    // 将所有封面图转换为 Base64
+                    for (const book of books.value) {
+                        try {
+                            const base64Url = await fetchImageAsBase64(book.cover);
+                            if (base64Url) {
+                                book.cover = base64Url;
+                            }
+                        } catch (error) {
+                            console.error('Error fetching initial cover as Base64:', error);
+                        }
+                    }
+                    loading.value = false;
                 });
+
 
                 onUnmounted(() => {
                     window.removeEventListener('keydown', handleEscapeKey);
@@ -856,20 +907,28 @@
                     return name;
                 };
 
-                const addEmoji = () => {
+                const addEmoji = async () => {
                     if (newEmojiContent.value) {
                         const existingNames = books.value.map(book => book.name);
                         const newEmojiName = generateUniqueName(existingNames) + '.txt';
-                        const newEmoji = {
-                            name: newEmojiName,
-                            cover: 'https://i0.hdslb.com/bfs/article/80d629bf90808e63331132e644bfb441927f896d.png',
-                            content: newEmojiContent.value
-                        };
-                        books.value.push(newEmoji);
-                        newEmojiContent.value = ''; // 清空内容
-                        closeAddEmojiModal();
+                        const defaultCoverUrl = 'https://i0.hdslb.com/bfs/article/80d629bf90808e63331132e644bfb441927f896d.png';
+
+                        try {
+                            const base64Url = await fetchImageAsBase64(defaultCoverUrl);
+                            const newEmoji = {
+                                name: newEmojiName,
+                                cover: base64Url || defaultCoverUrl, // 使用 Base64 或备用 URL
+                                content: newEmojiContent.value
+                            };
+                            books.value.push(newEmoji);
+                            newEmojiContent.value = ''; // 清空内容
+                            closeAddEmojiModal();
+                        } catch (error) {
+                            console.error('Error fetching default cover as Base64:', error);
+                        }
                     }
                 };
+
 
                 const startDownload = () => {
                     if (selectedBooks.value.length === 0) {
@@ -998,6 +1057,7 @@
                         throw error;
                     }
                 };
+
 
                 const mockBooks = [
                     {
@@ -30057,6 +30117,7 @@ article/bfc4e8b11bedf9cb90b32b8bcea2e9ed770f8c17.jpg
                                 .trim()
                     },
                 ];
+
 
 
                 books.value = mockBooks;
