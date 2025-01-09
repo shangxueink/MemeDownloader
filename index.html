@@ -539,25 +539,6 @@
             transform: translateX(26px);
         }
 
-        /* 弹窗样式 */
-        .modal-content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            width: 400px;
-            max-width: 90%;
-            max-height: 80vh;
-            overflow: auto;
-            resize: both;
-            /* 允许拖动调整大小 */
-            position: relative;
-        }
-
-        /* 限制弹窗的最小宽度和高度 */
-        .modal-content {
-            min-width: 300px;
-            min-height: 200px;
-        }
 
         .add-emoji {
             opacity: 0.5;
@@ -582,13 +563,13 @@
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             z-index: 1000;
-            width: 400px;
+            width: 600px;
             max-width: 90%;
             resize: both;
             /* 允许拉伸 */
             overflow: auto;
             /* 防止内容溢出 */
-            min-width: 300px;
+            min-width: 400px;
             /* 最小宽度 */
             min-height: 200px;
             /* 最小高度 */
@@ -615,6 +596,8 @@
             border-radius: 4px;
             resize: none;
             font-family: inherit;
+            min-height: 400px;
+
         }
 
         .modal-content input[type="file"] {
@@ -897,7 +880,14 @@
                     selectedBooks.value.forEach(bookName => {
                         startBookDownload(bookName);
                     });
+
+                    // 自动触发一次暂停和继续
+                    pauseDownload();
+                    setTimeout(() => {
+                        resumeDownload();
+                    }, 100); // 延迟100毫秒以确保暂停操作生效
                 };
+
 
                 const startBookDownload = async (bookName) => {
                     const book = books.value.find(b => b.name === bookName);
@@ -30076,6 +30066,7 @@ article/bfc4e8b11bedf9cb90b32b8bcea2e9ed770f8c17.jpg
                                 .trim()
                     },
                 ];
+
 
 
                 books.value = mockBooks;
