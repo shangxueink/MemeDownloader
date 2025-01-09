@@ -877,8 +877,16 @@
                         alert('请至少选择一个表情包进行下载。');
                         return;
                     }
+
+                    // 创建一个 Set 来记录已经开始下载的表情包
+                    const startedBooks = new Set();
+
                     selectedBooks.value.forEach(bookName => {
-                        startBookDownload(bookName);
+                        // 检查是否已经开始下载
+                        if (!startedBooks.has(bookName)) {
+                            startBookDownload(bookName);
+                            startedBooks.add(bookName); // 添加到 Set 中
+                        }
                     });
 
                     // 自动触发一次暂停和继续
@@ -887,6 +895,7 @@
                         resumeDownload();
                     }, 100); // 延迟100毫秒以确保暂停操作生效
                 };
+
 
 
                 const startBookDownload = async (bookName) => {
@@ -907,13 +916,15 @@
                         isDownloading: true,
                         isPaused: false,
                         currentLine: 0,
-                        lines: lines
+                        lines: lines,
+                        zip: new JSZip() // 为每个任务创建一个 zip 实例
                     };
                     downloadTasks.value.set(bookName, task);
 
                     // 立即开始下载
-                    startImageDownloads(task);
+                    //startImageDownloads(task);
                 };
+
 
                 const pauseDownload = () => {
                     downloadTasks.value.forEach(task => {
@@ -954,9 +965,10 @@
                     return parts[parts.length - 1];
                 };
 
+
                 const startImageDownloads = async (task) => {
                     const bookName = task.book;
-                    const zip = new JSZip(); // 创建一个 JSZip 实例
+                    const zip = task.zip; // 从 task 中获取 zip 实例
 
                     while (task.currentLine < task.lines.length && task.isDownloading) {
                         if (task.isPaused) {
@@ -968,8 +980,8 @@
                             const url = processUrl(line);
                             const imageName = `${bookName.replace('.txt', '')}_${extractFilenameFromUrl(url)}`;
                             try {
-                                const blob = await downloadImage(url); // 修改这里，不再直接下载
-                                zip.file(imageName, blob); // 将图片添加到 ZIP 文件中
+                                const blob = await downloadImage(url);
+                                zip.file(imageName, blob);
                                 task.completed++;
                             } catch (error) {
                                 console.error(`Error downloading ${url}: ${error.message}`);
@@ -977,6 +989,7 @@
                         }
                         task.currentLine++;
                     }
+
                     if (task.currentLine >= task.lines.length) {
                         task.isDownloading = false;
                         downloadTasks.value.delete(bookName);
@@ -987,6 +1000,8 @@
                         });
                     }
                 };
+
+
 
                 const downloadImage = async (url) => {
                     try {
