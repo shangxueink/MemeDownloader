@@ -664,6 +664,7 @@
             style="color: #6200ea; text-decoration: none;">问题反馈</a>
     </p>
 </footer>
+
 <body>
     <div id="app">
         <h1>Meme Downloader</h1>
@@ -800,7 +801,7 @@
                     showModal.value = true;
                 };
 
-                const changeCover = (book) => {
+                const changeCover = async (book) => {
                     if (book.isChangingCover) return; // 如果正在切换，直接返回
                     book.isChangingCover = true; // 标记为正在切换
 
@@ -808,17 +809,27 @@
                     const randomIndex = Math.floor(Math.random() * lines.length);
                     const newCover = processUrl(lines[randomIndex]);
 
-                    // 预加载图片
-                    const img = new Image();
-                    img.src = newCover;
-                    img.onload = () => {
-                        book.cover = newCover; // 图片加载成功后再更新封面
+                    try {
+                        const response = await fetch(newCover, {
+                            headers: {
+                                'Referer': 'https://www.bilibili.com/',
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36'
+                            },
+                            referrerPolicy: 'no-referrer'
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+
+                        const blob = await response.blob();
+                        const objectURL = URL.createObjectURL(blob);
+                        book.cover = objectURL;
+                    } catch (error) {
+                        console.error('Failed to load image:', newCover, error);
+                    } finally {
                         book.isChangingCover = false; // 重置标记
-                    };
-                    img.onerror = () => {
-                        console.error('Failed to load image:', newCover);
-                        book.isChangingCover = false; // 重置标记
-                    };
+                    }
                 };
 
 
@@ -1056,11 +1067,11 @@
                 };
 
                 const mockBooks = [
-    {
-        name: '0721.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/28a05482ea7c1ca2a122930407dd8a6d46d023bf.jpg',
-        content:
-            `
+                    {
+                        name: '0721.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/28a05482ea7c1ca2a122930407dd8a6d46d023bf.jpg',
+                        content:
+                            `
 article/390696c7e147e5364ef7f8d282339203f13415ef.jpg
 article/396671e9cc9601a7ab8314e69fe0673f4c408768.jpg
 article/71ab80cf74c93f4d35bb9d7473d6baf3e7c7be42.jpg
@@ -1673,13 +1684,13 @@ article/502ba23f5abfe328cda1677e94248e4468051a4b.jpg
 article/1675d8c586a9dea4314896b168c17ede648c4721.jpg
 article/8eff1fe428014fa07bef53233e9001ef60694480.jpg
 `
-                .trim()
-    },
-    {
-        name: '2233娘小剧场.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/fcb3695f2d64961f343b2e73250f750629f73b84.png',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '2233娘小剧场.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/fcb3695f2d64961f343b2e73250f750629f73b84.png',
+                        content:
+                            `
 article/f1df9c9ad300ad1e3b292a64f9f16d7eb8e08ba8.png
 article/ec77c65a5101adef1fc2cbfc5123119b1a9ba56b.png
 article/b98a839aa69c859fc6c3f203b6de5e544a02bf9b.png
@@ -1755,13 +1766,13 @@ article/72a91ce3ecdc5bdc336ca6d65cd1cccdd0d1d2bc.png
 article/e578ebc291511a0c767d644f46a133ce61364f8b.png
 article/ae31bbfe4820eca75fabe2cbcb40e7f7d2e21047.png
 `
-                .trim()
-    },
-    {
-        name: 'acomu414.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/aca8e7a8c1f9663d03bcb5ed445f716dc946ae9a.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'acomu414.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/aca8e7a8c1f9663d03bcb5ed445f716dc946ae9a.gif',
+                        content:
+                            `
 article/06128dc468906efdb1c6c6e0a05cf8a29ecf8835.gif
 article/bed4f486a81ecb6828770b2b0435557c639519eb.gif
 article/c8132efe790b1c31fa9461a82f87f7b700d9ca8e.gif
@@ -2050,13 +2061,13 @@ article/0ec919970b76dbb49910aa335ef5cd4ec73603fc.gif
 article/c49c05494c0dff804b0c264917488427d64079d7.gif
 article/12d219f6a5a4ab96a5976cc924530d4bb0c3bb7b.gif
 `
-                .trim()
-    },
-    {
-        name: 'ba.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/4a65c0a0da5195a43b5c99c55d1d893a80505.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'ba.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/4a65c0a0da5195a43b5c99c55d1d893a80505.jpg',
+                        content:
+                            `
 article/528faacc3d1cfcd81ab1fd82993af9173546559364991093.jpg
 article/11ce490327f68b419f0cbc4971d4bed23546559364991093.jpg
 article/2c52e25a839de3f5d971cf3f7e64cef53546559364991093.jpg
@@ -4810,13 +4821,13 @@ new_dyn/dc80c7615ed23645c303451567b1aca0339248122.gif
 new_dyn/63ada24a5a21d68f4d25dc8a0da19a72339248122.gif
 new_dyn/966fcd9c14d884c77436eb30804841e6339248122.gif
 `
-                .trim()
-    },
-    {
-        name: 'capoo.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/dcc0fd18b31f9ffa2481bd43d384c74e87f48b23.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'capoo.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/dcc0fd18b31f9ffa2481bd43d384c74e87f48b23.gif',
+                        content:
+                            `
 article/cd0b1be33009f94a8d14727e39b2753f46c3d442.gif
 article/b0235d6ec12eb5554184b8ec1ab439a44d237fc2.gif
 article/3e6b25e695be2032dd4822fe337e241cd002a00f.gif
@@ -5548,13 +5559,13 @@ article/30f8976c5e3e7d02077a5b5701f48bd84d88e29d.gif
 article/487bff863be118f7f447d52cbf46147cc44326fd.gif
 article/2f874367f377986f804dfb3cb9a53fb891c3e4c9.gif
 `
-                .trim()
-    },
-    {
-        name: 'chiikawa.txt',
-        cover: 'https://i0.hdslb.com/bfs/new_dyn/4fd651bd2037ab848d4c215c1a084d9c4102184.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'chiikawa.txt',
+                        cover: 'https://i0.hdslb.com/bfs/new_dyn/4fd651bd2037ab848d4c215c1a084d9c4102184.gif',
+                        content:
+                            `
 new_dyn/1ee80b0ff5c435671800e95a108021f2382573593.gif
 new_dyn/1ba462cba6478d93e0dfc5b430de0d3f382573593.gif
 new_dyn/a89c1581e2828b8871332c6e7d4ae3bd382573593.gif
@@ -5973,13 +5984,13 @@ article/223a47ec68a78cc37cdd2f6c7e920179295072747.gif
 article/79815c475526988dab52919ceb50f105295072747.gif
 article/325629c3dcd72148f913b2c3089ca0b8295072747.gif
 `
-                .trim()
-    },
-    {
-        name: 'doro.txt',
-        cover: 'https://i0.hdslb.com/bfs/new_dyn/7c8f634eb620889d7d55a0472362483839694000.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'doro.txt',
+                        cover: 'https://i0.hdslb.com/bfs/new_dyn/7c8f634eb620889d7d55a0472362483839694000.jpg',
+                        content:
+                            `
 article/098a7d7667d7794e44b1c79325abd29c39694000.jpg
 article/948d8b24437db03e910fe9150300df3239694000.jpg
 article/9a2bc86c8b54e49b73b264af6a25529339694000.jpg
@@ -6392,13 +6403,13 @@ new_dyn/f17b20a6a234827ce0f4acdaced85a32312276085.gif
 new_dyn/ad9ca79e0055f29ebb79b8cbd1278274312276085.gif
 new_dyn/3ee21ab15997998f0f55db213078fb77312276085.jpg
 `
-                .trim()
-    },
-    {
-        name: 'Downvote.txt',
-        cover: 'https://i0.hdslb.com/bfs/new_dyn/363b93f1c1b166ae53a20db107a5a53e568334215.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'Downvote.txt',
+                        cover: 'https://i0.hdslb.com/bfs/new_dyn/363b93f1c1b166ae53a20db107a5a53e568334215.gif',
+                        content:
+                            `
 article/e027f57bcd52206a65c0aaa9b41266bf383621883.gif
 article/71daba129b9cdf71e2c9f04702b32826383621883.gif
 article/91ef0edb1766a8b3d993df44c9d115e6383621883.gif
@@ -6587,13 +6598,13 @@ article/f778b30fbfc0a57e50ed9aca77d57e3efe33b1ae.png
 article/1cabe7e63636ddad028d7f36de327b0634370638.gif
 article/7c2bcaf9c71864efeda88055db70aa2b34370638.gif
 `
-                .trim()
-    },
-    {
-        name: 'eveonecat.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/238d272c2f121670f38b07dc0a3143975115c8b1.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'eveonecat.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/238d272c2f121670f38b07dc0a3143975115c8b1.gif',
+                        content:
+                            `
 article/729d8c84407e9fae2cbf59ce6410b1ee5866578e.gif
 article/9c40e78887d0050868249784b8f8fc5a0bb62bb8.gif
 article/9fa39b610ebdecff1c0b68d8d68b76830ecbf3fd.gif
@@ -7057,13 +7068,13 @@ article/cd4533a607fdb71020ed0fc610b7e9e8f006c66f.gif
 article/9f3a318d00a39b565f401cc4f55002836d57c6a5.gif
 article/4db95618e26f309a69b036abef6ee50f9e3a507c.gif
 `
-                .trim()
-    },
-    {
-        name: 'fufu.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/7420d69f60a092aa88783a76d3ddcd51bea9c041.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'fufu.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/7420d69f60a092aa88783a76d3ddcd51bea9c041.jpg',
+                        content:
+                            `
 article/67eea5bc1a924c6d56be0428556c4bc966da2880.jpg
 article/328e5a382b3782cfd0cb5b3cb6eff2743edcc71b.jpg
 article/75def5745c45cbccf603e72a307e102aed8b266f.jpg
@@ -8021,13 +8032,13 @@ article/0d09743a09817844b5ae01b1dc159229020195c1.jpg
 article/60cacc079b34ef9526f0117c10958db9537476bb.jpg
 article/86d7ad9096e1d74e9d9c69aa30217b8f9538a611.jpg
 `
-                .trim()
-    },
-    {
-        name: 'GirlsBandCry.txt',
-        cover: 'https://i0.hdslb.com/bfs/new_dyn/ed03405c5cf55fb0a479ea28611d5f2b64057125.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'GirlsBandCry.txt',
+                        cover: 'https://i0.hdslb.com/bfs/new_dyn/ed03405c5cf55fb0a479ea28611d5f2b64057125.gif',
+                        content:
+                            `
 new_dyn/3712608d38cffe3a61e6a7194f4adb3b64057125.gif
 new_dyn/27567fca4b9617fcda2a0a877839094164057125.gif
 new_dyn/9b2b5ae9e56bc62f7b6e5870f70875ce64057125.gif
@@ -11014,13 +11025,13 @@ new_dyn/ed03405c5cf55fb0a479ea28611d5f2b64057125.gif
 new_dyn/713003a7bbc01c3382d26b079abf11da64057125.gif
 new_dyn/0ac64e159f0f690f25faab578aba68bf64057125.gif
 `
-                .trim()
-    },
-    {
-        name: 'kemomimi酱表情包.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/fe4d700d1f42f3475f6c70f943508fa762de4d7a.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'kemomimi酱表情包.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/fe4d700d1f42f3475f6c70f943508fa762de4d7a.jpg',
+                        content:
+                            `
 article/d3ee7adbff82c5c356ff16b969293e1e7a16244d.jpg
 article/995077dfd76845a4fccb449ee59608fb3b1a3761.jpg
 article/b651b77b651a0e992d5dde5582199cc9fad2d0bf.jpg
@@ -12404,13 +12415,13 @@ article/977499a11c8c6ab8c073147b5a75de3dd5fff25c.png
 article/54f90cee07ca7a714933a901922ff6a1e02e986b.png
 article/e4feec8d56f8c97b3aad9a131e1b614fd8415ce5.png
 `
-                .trim()
-    },
-    {
-        name: 'mygo.txt',
-        cover: 'https://i0.hdslb.com/bfs/new_dyn/7c9854099b1a9a5be52da4fbe9e26db3295072747.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'mygo.txt',
+                        cover: 'https://i0.hdslb.com/bfs/new_dyn/7c9854099b1a9a5be52da4fbe9e26db3295072747.jpg',
+                        content:
+                            `
 new_dyn/80b89520b0e03d728a694df4e461cf65295072747.jpg
 new_dyn/b660d1445bb026d5af0d61f611fe5745295072747.jpg
 new_dyn/d60f7dd2cd7881404c9165d2f9e0216f295072747.jpg
@@ -12733,13 +12744,13 @@ article/c79679b4c373bead54025be716f99aba04f68013.png
 article/6062bf87442937e307085f7bc9f5e8e3965146cc.png
 article/b63460260d3cf4885c15700f4a923247ab4716a9.png
 `
-                .trim()
-    },
-    {
-        name: 'seseren.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/29cd22654b24211aab7128f874e8c7b494145d0c.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: 'seseren.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/29cd22654b24211aab7128f874e8c7b494145d0c.gif',
+                        content:
+                            `
 article/cb20aec1497819fb2caa8c2b8bf31f5ee0cb010c.gif
 article/3008b180c15265a030aeae77874e6e6e82ddcbb6.gif
 article/bd966575c4d92fe4eb77de43def3ab618b0a2894.gif
@@ -13218,13 +13229,13 @@ article/dd787d739407764a9def7f18cb0edaf33d0a26f7.gif
 article/42c9f76e8e32f23313b2673d76bcc1241d1972e2.gif
 article/ca3c944d5640884f8e110db08d42b80e8d57a31a.gif
 `
-                .trim()
-    },
-    {
-        name: '亚托莉表情包.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/2f0628fbd35e4c1f9e4d297518ba6dd04d1f121d.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '亚托莉表情包.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/2f0628fbd35e4c1f9e4d297518ba6dd04d1f121d.jpg',
+                        content:
+                            `
 article/5a3a8253b9b73aa66720c85b584e093a5cc0aa3e.jpg
 article/bc0316857ba8d33ba9090d7eb1f1ea2a494e2dfa.jpg
 article/314315e2cd436f82d775906085a3f05fc84257b0.jpg
@@ -13685,13 +13696,13 @@ new_dyn/e3f853ab8ffafe9e2b86f1a259e1cb6f31484761.gif
 new_dyn/7fd7d2f585e0548d37f4774a807f583031484761.jpg
 new_dyn/bd2862f2873f85ab099a43ad9a1d9d62516562211.gif
 `
-                .trim()
-    },
-    {
-        name: '初音未来Q.txt',
-        cover: 'https://i0.hdslb.com/bfs/new_dyn/90f5e629fb367cf44f012640b8a46678312276085.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '初音未来Q.txt',
+                        cover: 'https://i0.hdslb.com/bfs/new_dyn/90f5e629fb367cf44f012640b8a46678312276085.jpg',
+                        content:
+                            `
 new_dyn/fe1d7d148e33e095ee73fd1b650b5918295072747.jpg
 new_dyn/4a7d3b63d9344a1dbad5d0328845e038295072747.jpg
 new_dyn/c0ad86832d0d6768a139cada92c900d4295072747.jpg
@@ -13957,13 +13968,13 @@ article/725b62509f66b3a232f7e5f1f455afb4504f390a.jpg
 article/285982252c3eb7237806ff8a570c1b3b8af90c5b.jpg
 article/268628394d172cd0bba593e2e64e55426e9fe00a.jpg
 `
-                .trim()
-    },
-    {
-        name: '卡拉彼丘.txt',
-        cover: 'https://i0.hdslb.com/bfs/new_dyn/efe4aa927673ab50e67130ffca73457a384628005.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '卡拉彼丘.txt',
+                        cover: 'https://i0.hdslb.com/bfs/new_dyn/efe4aa927673ab50e67130ffca73457a384628005.jpg',
+                        content:
+                            `
 article/0dcbffab11fa658d3e92cf673752cc148caad63e.jpg
 article/8c5425db30face6c0168a655449dd32119af3523.jpg
 article/ccabf6eebb0a665ec652c72630c639f0efc31241.jpg
@@ -14146,13 +14157,13 @@ new_dyn/d15963e34bc741f24f833d5ce2304650384628005.jpg
 new_dyn/88e3e87581b1752b94b90949aaf9ff32384628005.jpg
 new_dyn/cab166f511158c9c4900c384cc3fd6ea384628005.jpg
 `
-                .trim()
-    },
-    {
-        name: '孤独摇滚.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/c0450775e715348f0b5843352a3474cf1401d342.png',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '孤独摇滚.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/c0450775e715348f0b5843352a3474cf1401d342.png',
+                        content:
+                            `
 article/c925c1a5df9bb24bc1a155e570f07f43772953c6.jpg
 article/601c40faef287381712ca82ea9f5615a589eeb70.png
 article/768244482bae18ffaccc19478bdc485a09fefb1b.png
@@ -15193,13 +15204,13 @@ article/eab5cbb7eb6ce608fdf5cb213168f42b1c76a779.png
 article/a2b969efef363fe9a00d887611dd880da4c4b52a.png
 article/965235e8b2bb0b84f8469b50dde4ffb7d4474d1d.png
 `
-                .trim()
-    },
-    {
-        name: '宇佐紀.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/09db951cfe1bccdf8ef3f1e7b20c4334348bc3c0.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '宇佐紀.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/09db951cfe1bccdf8ef3f1e7b20c4334348bc3c0.jpg',
+                        content:
+                            `
 article/4fd10420b396c386fe390e0bc5c277c782b067f0.jpg
 article/7daa2624e796efdb5af1502fad1d22d30627b07c.jpg
 article/272ba010f3fb8a5da1eeccad7d82a48cd648dcd8.jpg
@@ -15388,13 +15399,13 @@ article/f13258fe637f0f47dbede5a172ae7298cf9b612d.jpg
 article/687f5c3938f5c11e09c7419c55f3303c72233292.jpg
 article/e0005b4615ea7c262479167e81b06030dcec06c1.jpg
 `
-                .trim()
-    },
-    {
-        name: '小黑子.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/6506170c22e94e4f480b4802177913227da05dff.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '小黑子.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/6506170c22e94e4f480b4802177913227da05dff.gif',
+                        content:
+                            `
 article/6a03b452766596c5c52cc0a4fe4fd5145e2fdb54.gif
 article/97ed57730008ae730bbaf5f99a61473f6fd45063.gif
 article/5e9f220c6d2a618af79aa0b96556f344e3f8f791.gif
@@ -16314,13 +16325,13 @@ article/bcc2b99f2df68dc982db6d16f70836cb83ab5634.gif
 article/9b6402da71c91c5405d3c83918f36d36deda07e7.jpg
 article/cae927b2b136eea2512c46efca37489db82f9482.gif
 `
-                .trim()
-    },
-    {
-        name: '心海.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/b80a59633563c2458a054c7457f16a8d265175110.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '心海.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/b80a59633563c2458a054c7457f16a8d265175110.gif',
+                        content:
+                            `
 article/b80a59633563c2458a054c7457f16a8d265175110.gif
 article/d3ee081f825c9b16458bc3f39f699599265175110.gif
 article/d92b0c834b1aaefae1d0f3d829ade32b265175110.gif
@@ -16941,13 +16952,13 @@ article/4995863d59f7fc3fa35cada2d50f9761309daa08.jpg
 article/cca38b4b89c7fad67ad37579dc6cc57c1d19afda.jpg
 article/129d553a3da5b4fb05115f585898f53e838f398b.jpg
 `
-                .trim()
-    },
-    {
-        name: '柴郡.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/cf250c4d4677d7d45ff025d23f9d23f0175033875.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '柴郡.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/cf250c4d4677d7d45ff025d23f9d23f0175033875.gif',
+                        content:
+                            `
 new_dyn/3b86bc357083aa50bb1513fbd1869da33493112856972259.jpg
 new_dyn/b14bb08173609224ced95200fcd39c923493112856972259.jpg
 new_dyn/95ef8dffaddc2be7c9ae68e435501ac63493112856972259.jpg
@@ -17949,13 +17960,13 @@ article/5f077f3047210a9e734ecdb9278eeb40fe71d9bc.jpg
 article/67b007867fa30dacc048ca26302a3c61c99fc27f.jpg
 article/67c5ecab3206ba01d9fe7953ec26dfc4a500788b.jpg
 `
-                .trim()
-    },
-    {
-        name: '永雏小菲.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/a709702002ff8fdc6fb2588371acfaea95253a7b.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '永雏小菲.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/a709702002ff8fdc6fb2588371acfaea95253a7b.gif',
+                        content:
+                            `
 new_dyn/fce5bafa201ff85d171faa09c1364dfc323844657.gif
 new_dyn/2724f17f58110d87ae4689714967d273323844657.gif
 new_dyn/09b071570f2d9eae9aa315945bd00a30323844657.gif
@@ -18083,13 +18094,13 @@ article/17b3d997fca67b7dac05edd67693ec2c1ef3c9bf.jpg
 article/df9e207c6d2a74d3882e6c749d4a457167cb0663.gif
 article/29d27dd203a99415ec4870749f9d75279e514b19.gif
 `
-                .trim()
-    },
-    {
-        name: '流萤.txt',
-        cover: 'https://i0.hdslb.com/bfs/new_dyn/c76cef7066556254c4f91c6b75179fb13546591310907949.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '流萤.txt',
+                        cover: 'https://i0.hdslb.com/bfs/new_dyn/c76cef7066556254c4f91c6b75179fb13546591310907949.jpg',
+                        content:
+                            `
 article/d105cf5a6547b457f510387e17e96554316042034.gif
 article/e7359f6385ad21186d8d576d7871fb8d316042034.gif
 article/6e4e3d64c107c2f73795460702542a90316042034.gif
@@ -18422,13 +18433,13 @@ new_dyn/c02a8688b9139a3618c5a22d4cdafea932067967.jpg
 new_dyn/4657594af6fb05fe20b25e8d841644e832067967.gif
 new_dyn/ffc12ea0bb6411e52d91fbdc3f2cdff832067967.jpg
 `
-                .trim()
-    },
-    {
-        name: '滑稽.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/56f12468de113a72fdb9366cc1eb11bfa1b3105f.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '滑稽.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/56f12468de113a72fdb9366cc1eb11bfa1b3105f.jpg',
+                        content:
+                            `
 article/bc9ca83314366bcc3fa939f588a0d04e60db70db.jpg
 article/6a6a39d0831ebd9241a3b445146e4a01dbc8bc9a.jpg
 article/26c9f6207fa63876bd18d7c5792d184a0894b103.jpg
@@ -19297,13 +19308,13 @@ https:https://i0.hdslb.com/bfs/new_dyn/672ca08471e5afffad1b94774d822f50214157588
 https:https://i0.hdslb.com/bfs/new_dyn/add12636ab188d1f984d729c19c328112141575882.jpg
 article/9bcca7114d148bb4f90357789b4cbdcb593a5bca.jpg
 `
-                .trim()
-    },
-    {
-        name: '狗妈.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/f7b333f6fd3345c8bde487e7e521d0bbfe43ea53.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '狗妈.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/f7b333f6fd3345c8bde487e7e521d0bbfe43ea53.jpg',
+                        content:
+                            `
 article/b38607c3f6793ba0df9f86065eea4a30f18dcd20.jpg
 article/89c8c3d2fae5605a72469484c8dbdc93236f61b2.jpg
 article/0dd501c3a703314433dad6784e4ba13cb7ce729c.jpg
@@ -20417,13 +20428,13 @@ article/70eb43e9cbf0366017278d49ded5239d56311c2f.jpg
 article/957b5266c4ab8566b4895ae3dd36aa544f329ba5.jpg
 article/371de82da141e2eed8643c08c4e06e8ccec42c5b.jpg
 `
-                .trim()
-    },
-    {
-        name: '玛丽猫.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/6f457196c3c9227a3edc33f3202c434e295072747.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '玛丽猫.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/6f457196c3c9227a3edc33f3202c434e295072747.jpg',
+                        content:
+                            `
 new_dyn/052cc7cb51ea0d60008bf6cc766b1ab4326268855.gif
 new_dyn/63f5316989f273c04670159d02bc0f80326268855.gif
 new_dyn/a602eb13424030bf759f7ea95a3b861c326268855.gif
@@ -20746,13 +20757,13 @@ article/c5c57f33a0096f5d4652b7549e7164e6312276085.gif
 article/f3d0402a834b5f8dfbefc00863574c12312276085.gif
 article/91e6ec61d7857ada779267b2eb46fb7a312276085.gif
 `
-                .trim()
-    },
-    {
-        name: '瑟莉亚.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/ae0da5228e30798925a767638548efe8007f8b9a.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '瑟莉亚.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/ae0da5228e30798925a767638548efe8007f8b9a.jpg',
+                        content:
+                            `
 https://i0.hdslb.com/bfs/article/eb23a95ada8f7ba20b7c4fe9fd234c988ac0f919.jpg
 https://i0.hdslb.com/bfs/article/c733972ecc235f69eb54dc55da11bceec40c21a4.jpg
 https://i0.hdslb.com/bfs/article/5605a57a7e9810f3dea2d339bb354a3c8463c73d.jpg
@@ -20806,13 +20817,13 @@ https://i0.hdslb.com/bfs/article/ae0da5228e30798925a767638548efe8007f8b9a.jpg
 https://i0.hdslb.com/bfs/article/fe25ed23777df992d480cd62fe22fa149d442ab5.png
 https://i0.hdslb.com/bfs/article/f0029dfa8c1dde094e8b9d2b78de066c83e100a8.jpg
 `
-                .trim()
-    },
-    {
-        name: '甘城猫猫.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/5c1e9d80fc247e6569e129fdd4239f5d1d07c73a.png',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '甘城猫猫.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/5c1e9d80fc247e6569e129fdd4239f5d1d07c73a.png',
+                        content:
+                            `
 article/3014a2a3e40285758f0f29d2996a42bb660620aa.png
 article/6c7ce3969419c05d7ad7cadcfe745dbc7747b41d.png
 article/57c3fd9ff7c57e3316dad0609b71c1f25f5ce1ee.png
@@ -21656,13 +21667,13 @@ article/4947ea3655741b5d35407a27ab59f6cb18d79436.png
 article/8d80932f0681a2b60b751fc8d3b30281465b9efb.png
 article/ff0a46430f28d05c59a916729e156830a9308a76.png
 `
-                .trim()
-    },
-    {
-        name: '男娘武器库.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/23fdbcad79ef9470b1d81d273dd42af8383621883.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '男娘武器库.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/23fdbcad79ef9470b1d81d273dd42af8383621883.gif',
+                        content:
+                            `
 article/04adae45e976184eb11d4aaa0e12c1cf7258128.gif
 article/b8d79ea541dd4ea5ff5bb0515389b4e57258128.gif
 article/9a3b67a02881ad1143c86e32d2492bfb7258128.gif
@@ -22137,13 +22148,13 @@ article/eafbd9e455a99ef19d6efd94105db1ce7258128.gif
 article/926cf60625c4eddd1c58a126ac8c31207258128.gif
 article/a4cd124f353dea25769a426d5a2246f37258128.gif
 `
-                .trim()
-    },
-    {
-        name: '疾旋鼬.txt',
-        cover: 'https://i0.hdslb.com/bfs/new_dyn/dcfcaef1f4c2976428ef36149721e810397762459.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '疾旋鼬.txt',
+                        cover: 'https://i0.hdslb.com/bfs/new_dyn/dcfcaef1f4c2976428ef36149721e810397762459.jpg',
+                        content:
+                            `
 new_dyn/5b8c0ab4479fd3f3ab9abef1c80a5a7b295072747.jpg
 new_dyn/3aeb6064dee86b41b03c8e8dd7628c36295072747.jpg
 new_dyn/6c97d68a566de3403b8fb99ab4045a10295072747.jpg
@@ -22334,13 +22345,13 @@ article/85afbf24fa027541d2bdca6409603b23383621883.gif
 article/a80291db73f3f79f67bac0120b280128383621883.gif
 article/5c7492d039f21bc7d2e19d11a59041a4383621883.gif
 `
-                .trim()
-    },
-    {
-        name: '白圣女.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/c81508aa2b1bc13631670c0686bce36941110975.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '白圣女.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/c81508aa2b1bc13631670c0686bce36941110975.gif',
+                        content:
+                            `
 article/0046ecf3cee9b4ba1fc8ef70448c9b484a56a1cd.gif
 article/20cb3d2bd678dcd254dbf336926412021da32ccc.gif
 article/e930e87d70e5c482117563293f8399398d8790d5.gif
@@ -23075,13 +23086,13 @@ article/7bebaf0afe217d2bc24e781192056bba438140818.jpg
 article/3548981c0688cee76689a581e2aebbb3438140818.jpg
 article/0d808700e72fc7e5df055606ea459b59438140818.jpg
 `
-                .trim()
-    },
-    {
-        name: '白圣女黑白.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/9b2d4127c5753ebcee07db2a9bed4861bb18add8.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '白圣女黑白.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/9b2d4127c5753ebcee07db2a9bed4861bb18add8.jpg',
+                        content:
+                            `
 article/dfe1043fac950a9061add5eb8390632d9c93e1f1.jpg
 article/dc756cf346e70877fbead73d2313add553a5b37c.jpg
 article/25d54a8c45291e0362b7e62662e3d4f4e527edb6.jpg
@@ -23850,13 +23861,13 @@ article/8aadba8b31127d43dcb5af775f3371e2002e3d86.jpg
 article/fe4c6dde249da3891201368d6917b6d4a18762bd.jpg
 article/49fc61a007cfd49d8ee350ac211284a9e507b388.jpg
 `
-                .trim()
-    },
-    {
-        name: '绪山真寻.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/ede68fba3411a235c6d8d62453f29a1c87f55237.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '绪山真寻.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/ede68fba3411a235c6d8d62453f29a1c87f55237.jpg',
+                        content:
+                            `
 article/46b3c06ee3214a27374e04b58204fa3cbedd9341.jpg
 article/d96f90a51a1c50bb95f88b07a5e91a9500ecd4c3.jpg
 article/284524b6f0fdcb4c370787ffa7b692edcd9c8f4d.jpg
@@ -24850,13 +24861,13 @@ article/b77fed40ac4c65d5261971924a8c72e1ecacaeda.png
 article/ea837d0b99407a7f2eaaa7b974276b8be2293f98.png
 article/b87a6e1c596179cdc6217ad5b0b5d40133a1cacb.png
 `
-                .trim()
-    },
-    {
-        name: '藤田琴音.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/7919d42478597ce90bd87bb54281d3d5280481.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '藤田琴音.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/7919d42478597ce90bd87bb54281d3d5280481.gif',
+                        content:
+                            `
 new_dyn/3fe2b215c97f47865f8a52ffb227717f326268855.jpg
 new_dyn/b80fbda7f41223337a36bd7ea23bfcf9326268855.gif
 new_dyn/fdb9e6f4e79b2133964902992c66dd3d326268855.jpg
@@ -25051,13 +25062,13 @@ https://img.nga.178.com/attachments/mon_202405/02/-9lddQk6q-g2thZ2rT3cSt9-yr.png
 https://img.nga.178.com/attachments/mon_202405/02/-9lddQshtj-2xw3ZxT3cSy2-xm.jpg
 https://img.nga.178.com/attachments/mon_202405/03/-9lddQk6s-b9gX1lZfrT3cSdc-7p.gif
 `
-                .trim()
-    },
-    {
-        name: '蜜汁工坊.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/2cc0ebee6eb831a0dbbb7111eadcc9c5b0386d38.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '蜜汁工坊.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/2cc0ebee6eb831a0dbbb7111eadcc9c5b0386d38.jpg',
+                        content:
+                            `
 article/820583fe918bd1a8ce86639ebed4cf5e9f3d25ca.jpg
 article/239459d71982e2567270d9f825be1b25181fa3b3.jpg
 article/eaa7d8833b2cfc1bf9863bf58ec6d198e17b7c25.jpg
@@ -25325,13 +25336,13 @@ article/f534be6de8a47b8395f6b3869159f79bbb245f51.jpg
 article/a41bff1318209fae4c4947ff098d67f8cbbdb941.jpg
 article/835ee9d52bd71e61db3fda6e1a3b6af84419ded9.jpg
 `
-                .trim()
-    },
-    {
-        name: '败犬女主.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/6b8ea828a5130f8613be56ec18195503180959712.gif',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '败犬女主.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/6b8ea828a5130f8613be56ec18195503180959712.gif',
+                        content:
+                            `
 new_dyn/ad905e0ba7bd75930742da5b2f790d3c73456403.gif
 new_dyn/2090f05bae89e15bcb92bff58cf4eae573456403.gif
 new_dyn/31c335c36fd44b0833d3389815495a9f73456403.gif
@@ -26324,13 +26335,13 @@ new_dyn/3deed1eda0f6d1a888550a30736d425624227795.jpg
 new_dyn/80fce6ec286a4f49cc0ae473ee22830524227795.jpg
 new_dyn/0fa04c6e399b79a0a80a67b3285522f624227795.jpg
 `
-                .trim()
-    },
-    {
-        name: '赛马娘.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/f2b287935b134b6f70ff65179319c835e7a1b577.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '赛马娘.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/f2b287935b134b6f70ff65179319c835e7a1b577.jpg',
+                        content:
+                            `
 article/b521c30846fa0287782946c46155941121132446.jpg
 article/a67bc405cf3f9e25dd4731ebe57bbd1621132446.jpg
 article/1f3ea160c8ead54b599a55edc47c3e5f21132446.jpg
@@ -27376,13 +27387,13 @@ article/98bad4094928cf9952f085c75d1f30e000ee1538.jpg
 article/4dc852eb4894e09445173f9db7044085d9845670.jpg
 article/72443be4d9c7eef8ad00ba8b50860c00f2478021.jpg
 `
-                .trim()
-    },
-    {
-        name: '阿夸.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/636dda53e6a3366998e7a283f48f0df1d30704dc.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '阿夸.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/636dda53e6a3366998e7a283f48f0df1d30704dc.jpg',
+                        content:
+                            `
 article/2b752c63b946aa90e813bd355d102dca3c383dda.gif
 article/06401cac3df59cca1b73295d1b969cca7882970d.gif
 article/780a061762f72c7301de84cba9a2890b64f5be3a.jpg
@@ -28239,13 +28250,13 @@ article/ecfc1fd24a893664e02b2105f4e1406be19b317d.jpg
 article/fd4834ed823f443ce57139815b8129802d040e78.jpg
 article/de09bbae06b25a3fe49b82bb9517eb1c69ed2095.jpg
 `
-                .trim()
-    },
-    {
-        name: '阿尼亚.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/e3c61e3aa7b95b346492b8311172ae0b4a51183b.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '阿尼亚.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/e3c61e3aa7b95b346492b8311172ae0b4a51183b.jpg',
+                        content:
+                            `
 article/99d8f0ab3bdd8666d571eaa35c9f64c64b691066.jpg
 article/8cd7babf8e882e10cf24f95c6aac4f57bda05214.jpg
 article/27f6a08ba083636fb2d9ee804174c078bdbacdd3.jpg
@@ -29029,13 +29040,13 @@ article/cc392a679c9a04f46a7bee91ca2d65ec74f4f7ca.jpg
 article/db7b51941f4c3adee8a79ea491b7b3e616e67857.jpg
 article/aba01bc85c8370be9758fec509d8f814f7841b1c.jpg
 `
-                .trim()
-    },
-    {
-        name: '鹿乃子.txt',
-        cover: 'https://i0.hdslb.com/bfs/new_dyn/0e56f18a10473e5a9c7c15561b764dba62043450.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '鹿乃子.txt',
+                        cover: 'https://i0.hdslb.com/bfs/new_dyn/0e56f18a10473e5a9c7c15561b764dba62043450.jpg',
+                        content:
+                            `
 article/4f2229897abe26bd00b6be481ed58eaf171592062.png
 article/bf4ccaa869de7d098dcb33b60047f791171592062.png
 article/7bee40e5b36ee9e4da2c9cfa25232616171592062.png
@@ -29385,13 +29396,13 @@ new_dyn/f2cd24a3fd165b860925941732d7cf1962043450.jpg
 new_dyn/b11b239b761a1809faf7f3f9fd65d64a62043450.jpg
 new_dyn/dad28b7a5e03353920c1c87e8be1590362043450.jpg
 `
-                .trim()
-    },
-    {
-        name: '龙图.txt',
-        cover: 'https://i0.hdslb.com/bfs/article/d16ed98db4ed0838159f47b6170436c89b8b0eb9.jpg',
-        content:
-            `
+                                .trim()
+                    },
+                    {
+                        name: '龙图.txt',
+                        cover: 'https://i0.hdslb.com/bfs/article/d16ed98db4ed0838159f47b6170436c89b8b0eb9.jpg',
+                        content:
+                            `
 article/9e75e5accb7521977f7543e03d84795e50819387.gif
 article/874f2920c2d491949d91be20ea455936f8702543.gif
 article/d8b25f274ab46dbedb0b7c24bb7d5f7a08d823dd.gif
@@ -30110,9 +30121,9 @@ article/7b5685d8ea3d3e1d5737a0cbe2a52c1f54d4fa7b.jpg
 article/32951b9f18e3985d15e0f1c5573160bccebafe20.jpg
 article/bfc4e8b11bedf9cb90b32b8bcea2e9ed770f8c17.jpg
 `
-                .trim()
-    },
-];
+                                .trim()
+                    },
+                ];
 
 
 
