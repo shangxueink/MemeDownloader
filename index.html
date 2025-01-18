@@ -960,15 +960,18 @@
                 };
 
                 const processDownload = async (task) => {
+                    let imageIndex = 1; // 初始化图片序号
+
                     while (task.currentLine < task.lines.length && task.isDownloading && !task.isPaused) {
                         const line = task.lines[task.currentLine].trim();
                         if (line) {
                             const url = processUrl(line);
-                            const imageName = `${task.book.replace('.txt', '')}_${extractFilenameFromUrl(url)}`;
+                            const imageName = `${task.book.replace('.txt', '')}_${imageIndex}.jpg`; // 使用递增序号
                             try {
                                 const blob = await downloadImage(url);
                                 task.zip.file(imageName, blob);
                                 task.completed++;
+                                imageIndex++; // 序号递增
                             } catch (error) {
                                 console.error(`Error downloading ${url}: ${error.message}`);
                             }
@@ -989,6 +992,7 @@
                     }
                 };
 
+
                 const stopDownload = () => {
                     downloadTasks.value.forEach(task => {
                         task.isDownloading = false;
@@ -1005,17 +1009,12 @@
                     return url.startsWith('http') ? url : 'https://i0.hdslb.com/bfs/' + url;
                 };
 
-                const extractFilenameFromUrl = (url) => {
-                    const urlObj = new URL(url);
-                    const pathname = urlObj.pathname;
-                    const parts = pathname.split('/');
-                    return parts[parts.length - 1];
-                };
 
 
                 const startImageDownloads = async (task) => {
                     const bookName = task.book;
                     const zip = task.zip; // 从 task 中获取 zip 实例
+                    let imageIndex = 1; // 初始化图片序号
 
                     while (task.currentLine < task.lines.length && task.isDownloading) {
                         if (task.isPaused) {
@@ -1025,11 +1024,12 @@
                         const line = task.lines[task.currentLine].trim();
                         if (line) {
                             const url = processUrl(line);
-                            const imageName = `${bookName.replace('.txt', '')}_${extractFilenameFromUrl(url)}`;
+                            const imageName = `${bookName.replace('.txt', '')}_${imageIndex}.jpg`; // 使用递增序号
                             try {
                                 const blob = await downloadImage(url);
                                 zip.file(imageName, blob);
                                 task.completed++;
+                                imageIndex++; // 序号递增
                             } catch (error) {
                                 console.error(`Error downloading ${url}: ${error.message}`);
                             }
@@ -1047,6 +1047,7 @@
                         });
                     }
                 };
+
 
 
 
