@@ -883,13 +883,22 @@
                     return name;
                 };
 
+                const loadCoverFromContent = (content) => {
+                    const lines = content.split('\n').filter(line => line.trim() !== '');
+                    if (lines.length === 0) {
+                        return 'https://i0.hdslb.com/bfs/article/80d629bf90808e63331132e644bfb441927f896d.png'; // 默认封面
+                    }
+                    const randomIndex = Math.floor(Math.random() * lines.length);
+                    return processUrl(lines[randomIndex]);
+                };
+
                 const addEmoji = () => {
                     if (newEmojiContent.value) {
                         const existingNames = books.value.map(book => book.name);
                         const newEmojiName = generateUniqueName(existingNames) + '.txt';
                         const newEmoji = {
                             name: newEmojiName,
-                            cover: 'https://i0.hdslb.com/bfs/article/80d629bf90808e63331132e644bfb441927f896d.png',
+                            cover: loadCoverFromContent(newEmojiContent.value), // 使用函数设置cover
                             content: newEmojiContent.value
                         };
                         books.value.push(newEmoji);
@@ -960,18 +969,15 @@
                 };
 
                 const processDownload = async (task) => {
-                    let imageIndex = 1; // 初始化图片序号
-
                     while (task.currentLine < task.lines.length && task.isDownloading && !task.isPaused) {
                         const line = task.lines[task.currentLine].trim();
                         if (line) {
                             const url = processUrl(line);
-                            const imageName = `${task.book.replace('.txt', '')}_${imageIndex}.jpg`; // 使用递增序号
+                            const imageName = `${task.book.replace('.txt', '')}_${extractFilenameFromUrl(url)}`;
                             try {
                                 const blob = await downloadImage(url);
                                 task.zip.file(imageName, blob);
                                 task.completed++;
-                                imageIndex++; // 序号递增
                             } catch (error) {
                                 console.error(`Error downloading ${url}: ${error.message}`);
                             }
@@ -992,7 +998,6 @@
                     }
                 };
 
-
                 const stopDownload = () => {
                     downloadTasks.value.forEach(task => {
                         task.isDownloading = false;
@@ -1009,12 +1014,17 @@
                     return url.startsWith('http') ? url : 'https://i0.hdslb.com/bfs/' + url;
                 };
 
+                const extractFilenameFromUrl = (url) => {
+                    const urlObj = new URL(url);
+                    const pathname = urlObj.pathname;
+                    const parts = pathname.split('/');
+                    return parts[parts.length - 1];
+                };
 
 
                 const startImageDownloads = async (task) => {
                     const bookName = task.book;
                     const zip = task.zip; // 从 task 中获取 zip 实例
-                    let imageIndex = 1; // 初始化图片序号
 
                     while (task.currentLine < task.lines.length && task.isDownloading) {
                         if (task.isPaused) {
@@ -1024,12 +1034,11 @@
                         const line = task.lines[task.currentLine].trim();
                         if (line) {
                             const url = processUrl(line);
-                            const imageName = `${bookName.replace('.txt', '')}_${imageIndex}.jpg`; // 使用递增序号
+                            const imageName = `${bookName.replace('.txt', '')}_${extractFilenameFromUrl(url)}`;
                             try {
                                 const blob = await downloadImage(url);
                                 zip.file(imageName, blob);
                                 task.completed++;
-                                imageIndex++; // 序号递增
                             } catch (error) {
                                 console.error(`Error downloading ${url}: ${error.message}`);
                             }
@@ -1047,7 +1056,6 @@
                         });
                     }
                 };
-
 
 
 
@@ -1074,7 +1082,6 @@
                 const mockBooks = [
                     {
                         name: '0721.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/28a05482ea7c1ca2a122930407dd8a6d46d023bf.jpg',
                         content:
                             `
 article/390696c7e147e5364ef7f8d282339203f13415ef.jpg
@@ -1693,7 +1700,6 @@ article/8eff1fe428014fa07bef53233e9001ef60694480.jpg
                     },
                     {
                         name: '2233娘小剧场.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/fcb3695f2d64961f343b2e73250f750629f73b84.png',
                         content:
                             `
 article/f1df9c9ad300ad1e3b292a64f9f16d7eb8e08ba8.png
@@ -1775,7 +1781,6 @@ article/ae31bbfe4820eca75fabe2cbcb40e7f7d2e21047.png
                     },
                     {
                         name: 'acomu414.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/aca8e7a8c1f9663d03bcb5ed445f716dc946ae9a.gif',
                         content:
                             `
 article/06128dc468906efdb1c6c6e0a05cf8a29ecf8835.gif
@@ -2070,7 +2075,6 @@ article/12d219f6a5a4ab96a5976cc924530d4bb0c3bb7b.gif
                     },
                     {
                         name: 'ba.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/4a65c0a0da5195a43b5c99c55d1d893a80505.jpg',
                         content:
                             `
 article/528faacc3d1cfcd81ab1fd82993af9173546559364991093.jpg
@@ -4830,7 +4834,6 @@ new_dyn/966fcd9c14d884c77436eb30804841e6339248122.gif
                     },
                     {
                         name: 'capoo.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/dcc0fd18b31f9ffa2481bd43d384c74e87f48b23.gif',
                         content:
                             `
 article/cd0b1be33009f94a8d14727e39b2753f46c3d442.gif
@@ -5568,7 +5571,6 @@ article/2f874367f377986f804dfb3cb9a53fb891c3e4c9.gif
                     },
                     {
                         name: 'chiikawa.txt',
-                        cover: 'https://i0.hdslb.com/bfs/new_dyn/4fd651bd2037ab848d4c215c1a084d9c4102184.gif',
                         content:
                             `
 new_dyn/1ee80b0ff5c435671800e95a108021f2382573593.gif
@@ -5993,7 +5995,6 @@ article/325629c3dcd72148f913b2c3089ca0b8295072747.gif
                     },
                     {
                         name: 'doro.txt',
-                        cover: 'https://i0.hdslb.com/bfs/new_dyn/7c8f634eb620889d7d55a0472362483839694000.jpg',
                         content:
                             `
 article/098a7d7667d7794e44b1c79325abd29c39694000.jpg
@@ -6412,7 +6413,6 @@ new_dyn/3ee21ab15997998f0f55db213078fb77312276085.jpg
                     },
                     {
                         name: 'Downvote.txt',
-                        cover: 'https://i0.hdslb.com/bfs/new_dyn/363b93f1c1b166ae53a20db107a5a53e568334215.gif',
                         content:
                             `
 article/e027f57bcd52206a65c0aaa9b41266bf383621883.gif
@@ -6607,7 +6607,6 @@ article/7c2bcaf9c71864efeda88055db70aa2b34370638.gif
                     },
                     {
                         name: 'eveonecat.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/238d272c2f121670f38b07dc0a3143975115c8b1.gif',
                         content:
                             `
 article/729d8c84407e9fae2cbf59ce6410b1ee5866578e.gif
@@ -7077,7 +7076,6 @@ article/4db95618e26f309a69b036abef6ee50f9e3a507c.gif
                     },
                     {
                         name: 'fufu.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/7420d69f60a092aa88783a76d3ddcd51bea9c041.jpg',
                         content:
                             `
 article/67eea5bc1a924c6d56be0428556c4bc966da2880.jpg
@@ -8041,7 +8039,6 @@ article/86d7ad9096e1d74e9d9c69aa30217b8f9538a611.jpg
                     },
                     {
                         name: 'GirlsBandCry.txt',
-                        cover: 'https://i0.hdslb.com/bfs/new_dyn/ed03405c5cf55fb0a479ea28611d5f2b64057125.gif',
                         content:
                             `
 new_dyn/3712608d38cffe3a61e6a7194f4adb3b64057125.gif
@@ -11034,7 +11031,6 @@ new_dyn/0ac64e159f0f690f25faab578aba68bf64057125.gif
                     },
                     {
                         name: 'kemomimi酱表情包.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/fe4d700d1f42f3475f6c70f943508fa762de4d7a.jpg',
                         content:
                             `
 article/d3ee7adbff82c5c356ff16b969293e1e7a16244d.jpg
@@ -12424,7 +12420,6 @@ article/e4feec8d56f8c97b3aad9a131e1b614fd8415ce5.png
                     },
                     {
                         name: 'mygo.txt',
-                        cover: 'https://i0.hdslb.com/bfs/new_dyn/7c9854099b1a9a5be52da4fbe9e26db3295072747.jpg',
                         content:
                             `
 new_dyn/80b89520b0e03d728a694df4e461cf65295072747.jpg
@@ -12753,7 +12748,6 @@ article/b63460260d3cf4885c15700f4a923247ab4716a9.png
                     },
                     {
                         name: 'seseren.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/29cd22654b24211aab7128f874e8c7b494145d0c.gif',
                         content:
                             `
 article/cb20aec1497819fb2caa8c2b8bf31f5ee0cb010c.gif
@@ -13238,7 +13232,6 @@ article/ca3c944d5640884f8e110db08d42b80e8d57a31a.gif
                     },
                     {
                         name: '亚托莉表情包.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/2f0628fbd35e4c1f9e4d297518ba6dd04d1f121d.jpg',
                         content:
                             `
 article/5a3a8253b9b73aa66720c85b584e093a5cc0aa3e.jpg
@@ -13705,7 +13698,6 @@ new_dyn/bd2862f2873f85ab099a43ad9a1d9d62516562211.gif
                     },
                     {
                         name: '初音未来Q.txt',
-                        cover: 'https://i0.hdslb.com/bfs/new_dyn/90f5e629fb367cf44f012640b8a46678312276085.jpg',
                         content:
                             `
 new_dyn/fe1d7d148e33e095ee73fd1b650b5918295072747.jpg
@@ -13977,7 +13969,6 @@ article/268628394d172cd0bba593e2e64e55426e9fe00a.jpg
                     },
                     {
                         name: '卡拉彼丘.txt',
-                        cover: 'https://i0.hdslb.com/bfs/new_dyn/efe4aa927673ab50e67130ffca73457a384628005.jpg',
                         content:
                             `
 article/0dcbffab11fa658d3e92cf673752cc148caad63e.jpg
@@ -14166,7 +14157,6 @@ new_dyn/cab166f511158c9c4900c384cc3fd6ea384628005.jpg
                     },
                     {
                         name: '孤独摇滚.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/c0450775e715348f0b5843352a3474cf1401d342.png',
                         content:
                             `
 article/c925c1a5df9bb24bc1a155e570f07f43772953c6.jpg
@@ -15213,7 +15203,6 @@ article/965235e8b2bb0b84f8469b50dde4ffb7d4474d1d.png
                     },
                     {
                         name: '宇佐紀.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/09db951cfe1bccdf8ef3f1e7b20c4334348bc3c0.jpg',
                         content:
                             `
 article/4fd10420b396c386fe390e0bc5c277c782b067f0.jpg
@@ -15408,7 +15397,6 @@ article/e0005b4615ea7c262479167e81b06030dcec06c1.jpg
                     },
                     {
                         name: '小黑子.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/6506170c22e94e4f480b4802177913227da05dff.gif',
                         content:
                             `
 article/6a03b452766596c5c52cc0a4fe4fd5145e2fdb54.gif
@@ -16334,7 +16322,6 @@ article/cae927b2b136eea2512c46efca37489db82f9482.gif
                     },
                     {
                         name: '心海.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/b80a59633563c2458a054c7457f16a8d265175110.gif',
                         content:
                             `
 article/b80a59633563c2458a054c7457f16a8d265175110.gif
@@ -16961,7 +16948,6 @@ article/129d553a3da5b4fb05115f585898f53e838f398b.jpg
                     },
                     {
                         name: '柴郡.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/cf250c4d4677d7d45ff025d23f9d23f0175033875.gif',
                         content:
                             `
 new_dyn/3b86bc357083aa50bb1513fbd1869da33493112856972259.jpg
@@ -17969,7 +17955,7 @@ article/67c5ecab3206ba01d9fe7953ec26dfc4a500788b.jpg
                     },
                     {
                         name: '永雏小菲.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/a709702002ff8fdc6fb2588371acfaea95253a7b.gif',
+
                         content:
                             `
 new_dyn/fce5bafa201ff85d171faa09c1364dfc323844657.gif
@@ -18103,7 +18089,6 @@ article/29d27dd203a99415ec4870749f9d75279e514b19.gif
                     },
                     {
                         name: '流萤.txt',
-                        cover: 'https://i0.hdslb.com/bfs/new_dyn/c76cef7066556254c4f91c6b75179fb13546591310907949.jpg',
                         content:
                             `
 article/d105cf5a6547b457f510387e17e96554316042034.gif
@@ -18442,7 +18427,7 @@ new_dyn/ffc12ea0bb6411e52d91fbdc3f2cdff832067967.jpg
                     },
                     {
                         name: '滑稽.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/56f12468de113a72fdb9366cc1eb11bfa1b3105f.jpg',
+
                         content:
                             `
 article/bc9ca83314366bcc3fa939f588a0d04e60db70db.jpg
@@ -19317,7 +19302,7 @@ article/9bcca7114d148bb4f90357789b4cbdcb593a5bca.jpg
                     },
                     {
                         name: '狗妈.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/f7b333f6fd3345c8bde487e7e521d0bbfe43ea53.jpg',
+
                         content:
                             `
 article/b38607c3f6793ba0df9f86065eea4a30f18dcd20.jpg
@@ -20437,7 +20422,7 @@ article/371de82da141e2eed8643c08c4e06e8ccec42c5b.jpg
                     },
                     {
                         name: '玛丽猫.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/6f457196c3c9227a3edc33f3202c434e295072747.jpg',
+
                         content:
                             `
 new_dyn/052cc7cb51ea0d60008bf6cc766b1ab4326268855.gif
@@ -20766,7 +20751,7 @@ article/91e6ec61d7857ada779267b2eb46fb7a312276085.gif
                     },
                     {
                         name: '瑟莉亚.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/ae0da5228e30798925a767638548efe8007f8b9a.jpg',
+
                         content:
                             `
 https://i0.hdslb.com/bfs/article/eb23a95ada8f7ba20b7c4fe9fd234c988ac0f919.jpg
@@ -20826,7 +20811,7 @@ https://i0.hdslb.com/bfs/article/f0029dfa8c1dde094e8b9d2b78de066c83e100a8.jpg
                     },
                     {
                         name: '甘城猫猫.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/5c1e9d80fc247e6569e129fdd4239f5d1d07c73a.png',
+
                         content:
                             `
 article/3014a2a3e40285758f0f29d2996a42bb660620aa.png
@@ -21676,7 +21661,7 @@ article/ff0a46430f28d05c59a916729e156830a9308a76.png
                     },
                     {
                         name: '男娘武器库.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/23fdbcad79ef9470b1d81d273dd42af8383621883.gif',
+
                         content:
                             `
 article/04adae45e976184eb11d4aaa0e12c1cf7258128.gif
@@ -22157,7 +22142,7 @@ article/a4cd124f353dea25769a426d5a2246f37258128.gif
                     },
                     {
                         name: '疾旋鼬.txt',
-                        cover: 'https://i0.hdslb.com/bfs/new_dyn/dcfcaef1f4c2976428ef36149721e810397762459.jpg',
+
                         content:
                             `
 new_dyn/5b8c0ab4479fd3f3ab9abef1c80a5a7b295072747.jpg
@@ -22354,7 +22339,7 @@ article/5c7492d039f21bc7d2e19d11a59041a4383621883.gif
                     },
                     {
                         name: '白圣女.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/c81508aa2b1bc13631670c0686bce36941110975.gif',
+
                         content:
                             `
 article/0046ecf3cee9b4ba1fc8ef70448c9b484a56a1cd.gif
@@ -23095,7 +23080,7 @@ article/0d808700e72fc7e5df055606ea459b59438140818.jpg
                     },
                     {
                         name: '白圣女黑白.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/9b2d4127c5753ebcee07db2a9bed4861bb18add8.jpg',
+
                         content:
                             `
 article/dfe1043fac950a9061add5eb8390632d9c93e1f1.jpg
@@ -23870,7 +23855,7 @@ article/49fc61a007cfd49d8ee350ac211284a9e507b388.jpg
                     },
                     {
                         name: '绪山真寻.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/ede68fba3411a235c6d8d62453f29a1c87f55237.jpg',
+
                         content:
                             `
 article/46b3c06ee3214a27374e04b58204fa3cbedd9341.jpg
@@ -24870,7 +24855,7 @@ article/b87a6e1c596179cdc6217ad5b0b5d40133a1cacb.png
                     },
                     {
                         name: '藤田琴音.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/7919d42478597ce90bd87bb54281d3d5280481.gif',
+
                         content:
                             `
 new_dyn/3fe2b215c97f47865f8a52ffb227717f326268855.jpg
@@ -25071,7 +25056,7 @@ https://img.nga.178.com/attachments/mon_202405/03/-9lddQk6s-b9gX1lZfrT3cSdc-7p.g
                     },
                     {
                         name: '蜜汁工坊.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/2cc0ebee6eb831a0dbbb7111eadcc9c5b0386d38.jpg',
+
                         content:
                             `
 article/820583fe918bd1a8ce86639ebed4cf5e9f3d25ca.jpg
@@ -25345,7 +25330,7 @@ article/835ee9d52bd71e61db3fda6e1a3b6af84419ded9.jpg
                     },
                     {
                         name: '败犬女主.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/6b8ea828a5130f8613be56ec18195503180959712.gif',
+
                         content:
                             `
 new_dyn/ad905e0ba7bd75930742da5b2f790d3c73456403.gif
@@ -26344,7 +26329,7 @@ new_dyn/0fa04c6e399b79a0a80a67b3285522f624227795.jpg
                     },
                     {
                         name: '赛马娘.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/f2b287935b134b6f70ff65179319c835e7a1b577.jpg',
+
                         content:
                             `
 article/b521c30846fa0287782946c46155941121132446.jpg
@@ -27396,7 +27381,7 @@ article/72443be4d9c7eef8ad00ba8b50860c00f2478021.jpg
                     },
                     {
                         name: '阿夸.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/636dda53e6a3366998e7a283f48f0df1d30704dc.jpg',
+
                         content:
                             `
 article/2b752c63b946aa90e813bd355d102dca3c383dda.gif
@@ -28259,7 +28244,7 @@ article/de09bbae06b25a3fe49b82bb9517eb1c69ed2095.jpg
                     },
                     {
                         name: '阿尼亚.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/e3c61e3aa7b95b346492b8311172ae0b4a51183b.jpg',
+
                         content:
                             `
 article/99d8f0ab3bdd8666d571eaa35c9f64c64b691066.jpg
@@ -29049,7 +29034,7 @@ article/aba01bc85c8370be9758fec509d8f814f7841b1c.jpg
                     },
                     {
                         name: '鹿乃子.txt',
-                        cover: 'https://i0.hdslb.com/bfs/new_dyn/0e56f18a10473e5a9c7c15561b764dba62043450.jpg',
+
                         content:
                             `
 article/4f2229897abe26bd00b6be481ed58eaf171592062.png
@@ -29405,7 +29390,7 @@ new_dyn/dad28b7a5e03353920c1c87e8be1590362043450.jpg
                     },
                     {
                         name: '龙图.txt',
-                        cover: 'https://i0.hdslb.com/bfs/article/d16ed98db4ed0838159f47b6170436c89b8b0eb9.jpg',
+
                         content:
                             `
 article/9e75e5accb7521977f7543e03d84795e50819387.gif
@@ -30128,8 +30113,17 @@ article/bfc4e8b11bedf9cb90b32b8bcea2e9ed770f8c17.jpg
 `
                                 .trim()
                     },
-                ];
-
+                    /*
+                    {
+                        name: '.txt',
+                
+                        content:
+                            `
+                `
+                                .trim()
+                    },
+                    */
+                ].map(book => ({ ...book, cover: loadCoverFromContent(book.content) })); // 设置cover
 
 
                 books.value = mockBooks;
@@ -30149,7 +30143,7 @@ article/bfc4e8b11bedf9cb90b32b8bcea2e9ed770f8c17.jpg
                     newEmojiContent,
                     toggleSelectAll,
                     toggleSelect,
-                    handleImageClick, // 添加这个方法
+                    handleImageClick, 
                     changeCover,
                     closeModal,
                     showAddEmojiModal,
